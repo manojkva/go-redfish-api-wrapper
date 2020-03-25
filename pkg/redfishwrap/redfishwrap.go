@@ -1,4 +1,4 @@
-package redfishapi-wrapper
+package redfishwrap
 
 import (
 

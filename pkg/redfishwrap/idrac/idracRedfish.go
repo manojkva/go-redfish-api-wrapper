@@ -3,7 +3,8 @@ package idrac
 import (
 	"context"
 	"fmt"
-	RFWrap "github.com/manojkva/go-redfish-API-Wrapper/pkg/api-wrapper/redfishapi-wrapper"
+
+	RFWrap "github.com/manojkva/go-redfish-API-Wrapper/pkg/redfishwrap"
 	redfish "opendev.org/airship/go-redfish/client"
 )
 
@@ -11,9 +12,8 @@ type IdracRedfishClient struct {
 	Username string
 	Password string
 	HostIP   string
-	
-
 }
+
 func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) {
 
 	var auth = redfish.BasicAuth{UserName: a.Username,
@@ -26,13 +26,13 @@ func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) {
 	fmt.Printf("%v", httpPushURI)
 
 	etag := RFWrap.GetETagHttpURI(ctx)
-	fmt.Println("%v", etag)
-	imageURI, _ := RFWrap.HTTPUriDownload(ctx, filelocation,etag)
+    fmt.Printf("%v", etag)
+	imageURI, _ := RFWrap.HTTPUriDownload(ctx, filelocation, etag)
 
 	fmt.Printf("%v", imageURI)
 
 	jobID := RFWrap.SimpleUpdateRequest(ctx, imageURI)
 
-	fmt.Println("%v", jobID)
+    fmt.Printf("%v", jobID)
 
 }
