@@ -1,118 +1,217 @@
 package redfishwrap
 
 import (
-
-       redfish "opendev.org/airship/go-redfish/client"
-       "fmt"
-       "context"
-       "net/http"
-       "crypto/tls"
-       "time"
-       "encoding/json"
-//     "reflect"
-        "os"
-        "github.com/antihax/optional"
-//      "net/url"
-        "regexp"
- //     "io/ioutil"
- logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-
+	"context"
+	"crypto/tls"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	redfish "opendev.org/airship/go-redfish/client"
+	"time"
+	//     "reflect"
+	"github.com/antihax/optional"
+	_nethttp "net/http"
+	"os"
+	"regexp"
+	//     "io/ioutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var log = logf.Log.WithName("RedfishAPI")
-type RedfishAPIWrapper interface {
-     UpgradeFirmware( string )  (error)
 
+type RedfishAPIWrapper interface {
+	UpgradeFirmware(string) error
+	CheckJobStatus(string)
+	RebootServer(string) bool
+	PowerOn(string) bool
+	PowerOff(string) bool
 }
 
 func prettyPrint(i interface{}) string {
-    s, _ := json.MarshalIndent(i, "", "\t")
-    return string(s)
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
 }
+
 var tr *http.Transport = &http.Transport{
 	MaxIdleConns:       10,
 	IdleConnTimeout:    30 * time.Second,
 	DisableCompression: true,
-        TLSClientConfig:  &tls.Config{InsecureSkipVerify: true},
-        }
-
-func createAPIClient(HeaderInfo map[string]string) *redfish.DefaultApiService {
-        client := &http.Client{Transport: tr}
-        cfg := &redfish.Configuration{
-                BasePath:      "https://32.68.250.78",
-                DefaultHeader: make(map[string]string),
-                UserAgent:     "go-redfish/client",
-                HTTPClient: client,
-        }
-
-        if len(HeaderInfo) != 0 {
-        
-        for key,value := range HeaderInfo {
-                cfg.DefaultHeader[key] = value
-        }
-        } 
-        return redfish.NewAPIClient(cfg).DefaultApi
+	TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 }
 
-func GetTask( ctx context.Context, taskID string ) {
-       redfishApi := createAPIClient(make(map[string]string)) 
-       sl, response,err := redfishApi.GetTask(ctx,taskID )
-       fmt.Printf( "%+v %+v %+v", prettyPrint(sl),response, err)
+func createAPIClient(HeaderInfo map[string]string, hostIPV4addr string) *redfish.DefaultApiService {
+	client := &http.Client{Transport: tr}
+	cfg := &redfish.Configuration{
+		BasePath:      "https://" + hostIPV4addr,
+		DefaultHeader: make(map[string]string),
+		UserAgent:     "go-redfish/client",
+		HTTPClient:    client,
+	}
+
+	if len(HeaderInfo) != 0 {
+
+		for key, value := range HeaderInfo {
+			cfg.DefaultHeader[key] = value
+		}
+	}
+	return redfish.NewAPIClient(cfg).DefaultApi
 }
 
-func GetVirtualMedia( ctx context.Context ) {
-       redfishApi := createAPIClient(make(map[string]string)) 
-       sl, response,err := redfishApi.GetManagerVirtualMedia(ctx,"iDRAC.Embedded.1","CD" )
-       fmt.Printf( "%+v %+v %+v", prettyPrint(sl),response, err)
+func GetTask(ctx context.Context, hostIPV4addr string, taskID string) (int, redfish.Task) {
+	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
+	sl, response, err := redfishApi.GetTask(ctx, taskID)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	return response.StatusCode, sl
 }
 
-func UpdateService( ctx context.Context ) string  {
-       redfishApi := createAPIClient(make(map[string]string)) 
-       // call the UpdateService and get the HttpPushURi
-       sl, response,err := redfishApi.UpdateService(ctx)
-       fmt.Printf( "%+v %+v %+v", prettyPrint(sl),response, err)
-       return sl.HttpPushUri
+func GetVirtualMediaConnectedStatus(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
+	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
+	//	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, "iDRAC.Embedded.1", "CD")
+	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, managerID, media)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || sl.ConnectedVia == "NotConnected" {
+		return false
+	}
+	return true
 }
 
-func HTTPUriDownload( ctx context.Context, filePath string , etag string) (string,error ) {
-        filehandle, err  := os.Open(filePath)
-        if err != nil {
-            fmt.Println(err)
-           }
-        defer filehandle.Close()
-        reqBody :=  redfish.FirmwareInventoryDownloadImageOpts{  SoftwareImage :  optional.NewInterface(filehandle) }
-        headerInfo := make(map[string]string)
-        headerInfo["if-match"] = etag
-       redfishApi := createAPIClient(headerInfo) 
+func UpdateService(ctx context.Context, hostIPV4addr string) string {
+	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
+	// call the UpdateService and get the HttpPushURi
+	sl, response, err := redfishApi.UpdateService(ctx)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	return sl.HttpPushUri
+}
 
-	sl,response,err := redfishApi.FirmwareInventoryDownloadImage(ctx,&reqBody )
-        fmt.Printf( "%+v %+v %+v", prettyPrint(sl),response, err)
-        location, _ := response.Location()
-        return string(location.RequestURI()), err
+func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, etag string) (string, error) {
+	filehandle, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer filehandle.Close()
+	reqBody := redfish.FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
+	headerInfo := make(map[string]string)
+	headerInfo["if-match"] = etag
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, &reqBody)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	location, _ := response.Location()
+	return string(location.RequestURI()), err
 
 }
 
-
-func  GetETagHttpURI ( ctx context.Context ) string {
-       redfishApi := createAPIClient(make(map[string]string)) 
-       sl, response, err := redfishApi.FirmwareInventory(ctx)
-       fmt.Printf( "%+v %+v %+v", prettyPrint(sl),response, err)
-       etag :=  response.Header["Etag"]
-       fmt.Printf("%v", etag[0])
-       return etag[0]
+func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
+	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
+	sl, response, err := redfishApi.FirmwareInventory(ctx)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	etag := response.Header["Etag"]
+	fmt.Printf("%v", etag[0])
+	return etag[0]
 }
 
-func SimpleUpdateRequest( ctx context.Context, imageURI string) string {
-        headerInfo := make(map[string]string)
-       redfishApi := createAPIClient(headerInfo) 
-        reqBody := new (redfish.SimpleUpdateRequestBody) 
-        localUriImage := imageURI
-        reqBody.ImageURI = localUriImage
-	    sl,response,err := redfishApi.UpdateServiceSimpleUpdate(ctx, *reqBody,)
-        fmt.Printf( "%+v %+v %+v", prettyPrint(sl),response, err)
-        jobID_location := response.Header["Location"]
-        re := regexp.MustCompile(`JID_(.*)`)
-        jobID :=  re.FindStringSubmatch(jobID_location[0])[1]
-        return jobID
+func getJobID(response *_nethttp.Response) string {
+	jobID_location := response.Header["Location"]
+	re := regexp.MustCompile(`JID_(.*)`)
+	jobID := re.FindStringSubmatch(jobID_location[0])[1]
+	return jobID
 }
 
+func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI string) string {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	reqBody := new(redfish.SimpleUpdateRequestBody)
+	localUriImage := imageURI
+	reqBody.ImageURI = localUriImage
+	sl, response, err := redfishApi.UpdateServiceSimpleUpdate(ctx, *reqBody)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	return getJobID(response)
+}
+
+func ResetServer(ctx context.Context, hostIPV4addr string, systemId string) bool {
+
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_FORCE_RESTART}
+
+	sl, response, err := redfishApi.ResetSystem(ctx, systemId, resetRequestBody)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || response.StatusCode != 200 {
+		return false
+	}
+	return true
+}
+
+func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, computerSystem redfish.ComputerSystem) bool {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	sl, response, err := redfishApi.SetSystem(ctx, systemId, computerSystem)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || response.StatusCode != 200 {
+		return false
+	}
+	return true
+}
+
+func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	body := make(map[string]interface{})
+
+	sl, response, err := redfishApi.EjectVirtualMedia(ctx, managerID, media, body)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || response.StatusCode != 200 {
+		return false
+	}
+
+	return true
+
+}
+
+func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID string, mediaID string, insertMediaReqBody redfish.InsertMediaRequestBody) bool {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	sl, response, err := redfishApi.InsertVirtualMedia(ctx, managerID, mediaID, insertMediaReqBody)
+
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || response.StatusCode != 200 {
+		return false
+	}
+
+	return true
+
+}
+
+func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, controllerID string) {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	sl, response, err := redfishApi.GetVolumes(ctx, systemID, controllerID)
+
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+
+}
+
+func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string, storageID string) string {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	response, err := redfishApi.DeleteVirtualdisk(ctx, systemID, storageID)
+
+	fmt.Printf("%+v %+v", response, err)
+	return getJobID(response)
+
+}
+
+func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string, controllerID string, createVirtualDiskRequestBody redfish.CreateVirtualDiskRequestBody) string {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	return getJobID(response)
+
+}
