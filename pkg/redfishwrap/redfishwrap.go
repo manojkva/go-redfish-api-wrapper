@@ -186,14 +186,17 @@ func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID stri
 
 }
 
-func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, controllerID string) {
+func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, controllerID string) []redfish.IdRef{
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
 	sl, response, err := redfishApi.GetVolumes(ctx, systemID, controllerID)
 
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-
+	if err != nil || response.StatusCode != 200 {
+		return nil
+	} 
+	return sl.Members
 }
 
 func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string, storageID string) string {
@@ -203,7 +206,9 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	response, err := redfishApi.DeleteVirtualdisk(ctx, systemID, storageID)
 
 	fmt.Printf("%+v %+v", response, err)
-	return getJobID(response)
+	jobid := getJobID(response)
+	
+	return jobid
 
 }
 

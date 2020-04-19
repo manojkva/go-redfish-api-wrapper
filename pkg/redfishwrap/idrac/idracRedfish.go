@@ -145,10 +145,23 @@ func (a *IdracRedfishClient) InsertISO(managerID string, mediaID string, imageUR
 
 }
 
-func (a *IdracRedfishClient) GetVirtualDisks(systemID string, controllerID string) {
+func (a *IdracRedfishClient) GetVirtualDisks(systemID string, controllerID string)[]string {
 
 	ctx := a.createContext()
-	RFWrap.GetVolumes(ctx, a.HostIP, systemID, controllerID)
+	idrefs := RFWrap.GetVolumes(ctx, a.HostIP, systemID, controllerID)
+	if idrefs == nil{
+		return nil
+	}
+	virtualDisks := []string{}
+	for _,id := range idrefs{
+
+		fmt.Printf("VirtualDisk Info %v\n", id.OdataId)
+		vd := strings.Split(id.OdataId,"/")
+		if vd != nil {
+		  virtualDisks = append(virtualDisks,vd[len(vd)-1])
+		}
+	}
+	return virtualDisks
 
 }
 
@@ -164,12 +177,12 @@ func (a *IdracRedfishClient) CreateVirtualDisk(systemID string, controllerID str
 	drives := []redfish.IdRef{}
 
 	for _, uri := range urilist {
-		driveinfo := fmt.Sprintf("/redfish/v1/Systems/System.Embedded.1/Storage/Drives/%s", uri)
+		driveinfo := fmt.Sprintf("/redfish/v1/Systems/%s/Storage/Drives/%s",systemID, uri)
 		drives = append(drives, redfish.IdRef{OdataId: driveinfo})
 	}
 
 	createvirtualBodyReq := redfish.CreateVirtualDiskRequestBody{
-		VolumeType: volumeType,
+		VolumeType: redfish.VolumeType(volumeType),
 		Name:       name,
 		Drives:     drives,
 	}
@@ -177,11 +190,38 @@ func (a *IdracRedfishClient) CreateVirtualDisk(systemID string, controllerID str
 	return RFWrap.CreateVirtualDisk(ctx, a.HostIP, systemID, controllerID, createvirtualBodyReq)
 }
 
+func (a *IdracRedfishClient)CleanVirtualDisksIfAny(systemID string, controllerID string) bool{
+
+	var result bool = false
+
+	// Get the list of VirtualDisks
+	virtualDisks := a.GetVirtualDisks(systemID, controllerID)
+	// for testing skip the OS Disk
+	//virtualDisks = virtualDisks[1:] 
+	if len(virtualDisks) == 0 {
+		fmt.Printf("No existing RAIS found")
+		
+	} else {
+		for _,vd  := range virtualDisks {
+			jobid  := a.DeletVirtualDisk(systemID,vd)
+			fmt.Printf("Delete Job ID %v\n",jobid)
+		//	a.CheckJobStatus(jobid)
+			result = true
+
+			if result == false {
+				fmt.Printf("Failed to delete virtual disk %v\n",vd)
+				return result
+         
+			}
+		}
+	}
+
+    return result
+}
+
 //TODO
-// Update volume type in openapi file
 // Add function to clean up RAID
 // Add function to create new RAID
-//Change in  delete generated file..
 
 /*
 func (hp hardwareProfile) cleanVirtualDIskIfEExists() bool {

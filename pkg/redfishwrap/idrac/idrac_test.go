@@ -35,6 +35,12 @@ func TestDeleteVirtualDisk(t *testing.T) {
 	t.Logf("Job ID %v", jobid)
 	//	client.CheckJobStatus(jobid)
 }
+
+func TestCleanVirtualDisksIfAny(t * testing.T){
+	systemID := "System.Embedded.1"
+	controllerID := "RAID.Slot.6-1"
+	client.CleanVirtualDisksIfAny(systemID,controllerID)
+}
 /*
 name: ephemeral
           #          raid-type: 1
@@ -47,10 +53,11 @@ func TestCreateVirtualDisk(t *testing.T){
 	systemID := "System.Embedded.1"
 	controllerID := "RAID.Slot.6-1"
 	volumeType:= "Mirrored"
-	name := "ephemeral"
+	name := "ephemeral-1"
 	drives := []string {"Disk.Bay.8:Enclosure.Internal.0-1:RAID.Slot.6-1", 
 	                           "Disk.Bay.9:Enclosure.Internal.0-1:RAID.Slot.6-1" }
 	jobid := client.CreateVirtualDisk(systemID,controllerID,volumeType,name, drives) 
 	t.Logf("Job ID %v", jobid)
+	client.CheckJobStatus(jobid)
 
 }
