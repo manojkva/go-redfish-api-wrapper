@@ -61,3 +61,10 @@ func TestCreateVirtualDisk(t *testing.T){
 	client.CheckJobStatus(jobid)
 
 }
+
+func TestGetNodeUUID(t *testing.T){
+	systemID := "System.Embedded.1"
+	uuid,_ := client.GetNodeUUID(systemID)
+    t.Logf("UUID %v", uuid )
+
+}

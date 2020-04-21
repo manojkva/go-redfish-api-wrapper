@@ -219,6 +219,17 @@ func (a *IdracRedfishClient)CleanVirtualDisksIfAny(systemID string, controllerID
     return result
 }
 
+func (a * IdracRedfishClient)GetNodeUUID(systemID string )(string, bool){
+
+	ctx := a.createContext()
+	computerSystem, _  := RFWrap.GetSystem(ctx,a.HostIP,systemID)
+
+	if computerSystem != nil{
+		return computerSystem.UUID, true
+	}
+	return "", false
+}
+
 //TODO
 // Add function to clean up RAID
 // Add function to create new RAID

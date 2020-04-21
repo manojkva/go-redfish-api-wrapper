@@ -155,6 +155,22 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 	return true
 }
 
+func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redfish.ComputerSystem, bool){
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+
+	sl, response, err := redfishApi.GetSystem(ctx, systemID)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+
+	if err != nil || response.StatusCode != 200 {
+		return nil, false
+	}
+
+	return &sl, true
+
+
+}
+
 func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
