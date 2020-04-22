@@ -1,4 +1,4 @@
-module github.com/manojkva/go-redfish-API-Wrapper
+module github.com/manojkva/go-redfish-api-wrapper
 
 replace opendev.org/airship/go-redfish/client => /home/ekuamaj/go/src/opendev.org/airship/go-redfish/client
 

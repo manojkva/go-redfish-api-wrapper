@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	RFWrap "github.com/manojkva/go-redfish-API-Wrapper/pkg/redfishwrap"
+	RFWrap "github.com/manojkva/go-redfish-api-wrapper/pkg/redfishwrap"
 	redfish "opendev.org/airship/go-redfish/client"
 )
 
