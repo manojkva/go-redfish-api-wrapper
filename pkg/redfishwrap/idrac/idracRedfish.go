@@ -71,7 +71,9 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 			fmt.Println("\n- FAIL: Timeout of 1 hour has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
 			return true
 			
-		} else if strings.Contains(jobInfo.Messages[0].Message, "failed") {
+		} else if jobInfo.Messages != nil { 
+		
+		if strings.Contains(jobInfo.Messages[0].Message, "failed") {
 			fmt.Println("FAIL")
 			return false
 
@@ -85,7 +87,8 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 			fmt.Println("Success")
 			result = true
 			break
-		} else {
+		} 
+		}else {
 			time.Sleep(time.Second*5)
 			continue
 		}

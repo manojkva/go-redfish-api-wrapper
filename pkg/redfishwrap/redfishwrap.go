@@ -112,7 +112,7 @@ func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
 
 func getJobID(response *_nethttp.Response) string {
 	jobID_location := response.Header["Location"]
-	re := regexp.MustCompile(`JID_(.*)`)
+	re := regexp.MustCompile(`(JID_.*)`)
 	jobID := re.FindStringSubmatch(jobID_location[0])[1]
 	return jobID
 }
@@ -222,7 +222,10 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	response, err := redfishApi.DeleteVirtualdisk(ctx, systemID, storageID)
 
 	fmt.Printf("%+v %+v", response, err)
-	jobid := getJobID(response)
+	var jobid string = ""
+	if (response.StatusCode == 200) || (response.StatusCode == 202) {
+	jobid = getJobID(response)
+	}
 	
 	return jobid
 
@@ -233,6 +236,9 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	return getJobID(response)
-
+	var jobid string  = ""
+	if (response.StatusCode == 200) || (response.StatusCode == 202){
+	jobid = getJobID(response)
+	}
+    return jobid
 }

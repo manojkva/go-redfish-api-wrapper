@@ -2,12 +2,14 @@ package idrac
 
 import (
 	"testing"
+	"github.com/stretchr/testify/assert"
+
 )
 
 var client = &IdracRedfishClient{
 	Username: "root",
 	Password: "Abc.1234",
-	HostIP:   "32.68.250.78",
+	HostIP:   "32.68.220.135",
 }
 
 func TestUpgradeFirmware(t *testing.T) {
@@ -17,7 +19,7 @@ func TestUpgradeFirmware(t *testing.T) {
 }
 
 func TestCheckJobStatus(t *testing.T) {
-	jobId := "JID_851862680400"
+	jobId :=  "JID_876467251252"
 	client.CheckJobStatus(jobId)
 }
 
@@ -30,16 +32,18 @@ func TestGetVirtualDisks(t *testing.T) {
 
 func TestDeleteVirtualDisk(t *testing.T) {
 	systemID := "System.Embedded.1"
-	storageID := "Disk.Virtual.4:RAID.Slot.6-1"
+	storageID := "Disk.Virtual.0:RAID.Slot.6-1"
 	jobid := client.DeletVirtualDisk(systemID, storageID)
 	t.Logf("Job ID %v", jobid)
-	//	client.CheckJobStatus(jobid)
+	res := client.CheckJobStatus(jobid)
+	assert.Equal(t,res,true)
 }
 
 func TestCleanVirtualDisksIfAny(t * testing.T){
 	systemID := "System.Embedded.1"
 	controllerID := "RAID.Slot.6-1"
 	client.CleanVirtualDisksIfAny(systemID,controllerID)
+
 }
 /*
 name: ephemeral
@@ -58,7 +62,9 @@ func TestCreateVirtualDisk(t *testing.T){
 	                           "Disk.Bay.9:Enclosure.Internal.0-1:RAID.Slot.6-1" }
 	jobid := client.CreateVirtualDisk(systemID,controllerID,volumeType,name, drives) 
 	t.Logf("Job ID %v", jobid)
-	client.CheckJobStatus(jobid)
+	res  := client.CheckJobStatus(jobid)
+	t.Logf("%v", res)
+	assert.Equal(t,res,true)
 
 }
 
