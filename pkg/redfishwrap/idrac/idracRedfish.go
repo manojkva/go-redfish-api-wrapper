@@ -3,7 +3,7 @@ package idrac
 import (
 	"context"
 	"fmt"
-	"os"
+	//"os"
 	"strings"
 	"time"
 
