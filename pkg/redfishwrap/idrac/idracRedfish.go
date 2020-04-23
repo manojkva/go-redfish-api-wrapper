@@ -48,9 +48,10 @@ func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) {
 	a.CheckJobStatus(jobID)
 }
 
-func (a *IdracRedfishClient) CheckJobStatus(jobId string) {
+func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 	ctx := a.createContext()
 	start := time.Now()
+	var result bool = false
 
 	for {
 
@@ -63,28 +64,33 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) {
 
 		} else {
 			fmt.Printf("Failed to check the status")
-			os.Exit(3)
+		    return false
 		}
 
 		if timeelapsedInMinutes >= 60 {
 			fmt.Println("\n- FAIL: Timeout of 1 hour has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
-			os.Exit(3)
+			return true
+			
 		} else if strings.Contains(jobInfo.Messages[0].Message, "failed") {
 			fmt.Println("FAIL")
-			os.Exit(3)
+			return false
 
 		} else if strings.Contains(jobInfo.Messages[0].Message, "scheduled") {
 			//	fmt.Prinln("\n- PASS, job ID %s successfully marked as scheduled, powering on or rebooting the server to apply the update" % data[u"Id"] ")
+			result = true
 			break
+
 		} else if strings.Contains(jobInfo.Messages[0].Message, "completed successfully") {
 			//		fmt.Prinln("\n- PASS, job ID %s successfully marked as scheduled, powering on or rebooting the server to apply the update" % data[u"Id"] ")
 			fmt.Println("Success")
+			result = true
 			break
 		} else {
-			time.Sleep(1)
+			time.Sleep(time.Second*5)
 			continue
 		}
 	}
+	return result
 }
 
 func (a *IdracRedfishClient) RebootServer(systemID string) bool {
@@ -196,24 +202,30 @@ func (a *IdracRedfishClient)CleanVirtualDisksIfAny(systemID string, controllerID
 
 	// Get the list of VirtualDisks
 	virtualDisks := a.GetVirtualDisks(systemID, controllerID)
+	totalvirtualDisks := len(virtualDisks)
+	var countofVDcreated int = 0
 	// for testing skip the OS Disk
 	//virtualDisks = virtualDisks[1:] 
-	if len(virtualDisks) == 0 {
-		fmt.Printf("No existing RAIS found")
+	if totalvirtualDisks == 0 {
+		fmt.Printf("No existing RAID disks found")
+		result = true
 		
 	} else {
 		for _,vd  := range virtualDisks {
 			jobid  := a.DeletVirtualDisk(systemID,vd)
 			fmt.Printf("Delete Job ID %v\n",jobid)
-		//	a.CheckJobStatus(jobid)
-			result = true
+			result = a.CheckJobStatus(jobid)
 
 			if result == false {
 				fmt.Printf("Failed to delete virtual disk %v\n",vd)
 				return result
-         
 			}
+			countofVDcreated += 1
+
 		}
+	}
+	if countofVDcreated  != totalvirtualDisks {
+		result  = false
 	}
 
     return result
