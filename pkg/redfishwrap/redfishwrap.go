@@ -32,6 +32,17 @@ func prettyPrint(i interface{}) string {
 	return string(s)
 }
 
+func checkStatusCodeforGet(statuscode int)bool{
+	sucessCodes  := []int{200, 204,202}
+	for  _,x := range sucessCodes{
+		if statuscode == x {
+			return true
+		}
+	}
+	return false
+}
+
+
 var tr *http.Transport = &http.Transport{
 	MaxIdleConns:       10,
 	IdleConnTimeout:    30 * time.Second,
@@ -137,7 +148,7 @@ func ResetServer(ctx context.Context, hostIPV4addr string, systemId string) bool
 
 	sl, response, err := redfishApi.ResetSystem(ctx, systemId, resetRequestBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	if err != nil || response.StatusCode != 200 {
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
 	return true
@@ -149,7 +160,7 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 
 	sl, response, err := redfishApi.SetSystem(ctx, systemId, computerSystem)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	if err != nil || response.StatusCode != 200 {
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
 	return true
@@ -162,7 +173,7 @@ func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redf
 	sl, response, err := redfishApi.GetSystem(ctx, systemID)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
 
-	if err != nil || response.StatusCode != 200 {
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return nil, false
 	}
 
@@ -179,7 +190,7 @@ func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID strin
 
 	sl, response, err := redfishApi.EjectVirtualMedia(ctx, managerID, media, body)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	if err != nil || response.StatusCode != 200 {
+	if err != nil ||(checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
 
@@ -194,7 +205,7 @@ func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID stri
 	sl, response, err := redfishApi.InsertVirtualMedia(ctx, managerID, mediaID, insertMediaReqBody)
 
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	if err != nil || response.StatusCode != 200 {
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
 
@@ -209,7 +220,7 @@ func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, contr
 	sl, response, err := redfishApi.GetVolumes(ctx, systemID, controllerID)
 
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	if err != nil || response.StatusCode != 200 {
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return nil
 	} 
 	return sl.Members

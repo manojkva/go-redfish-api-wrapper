@@ -1,9 +1,8 @@
 package idrac
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
-
+	"testing"
 )
 
 var client = &IdracRedfishClient{
@@ -19,7 +18,7 @@ func TestUpgradeFirmware(t *testing.T) {
 }
 
 func TestCheckJobStatus(t *testing.T) {
-	jobId :=  "JID_876467251252"
+	jobId := "JID_876467251252"
 	client.CheckJobStatus(jobId)
 }
 
@@ -32,19 +31,20 @@ func TestGetVirtualDisks(t *testing.T) {
 
 func TestDeleteVirtualDisk(t *testing.T) {
 	systemID := "System.Embedded.1"
-	storageID := "Disk.Virtual.0:RAID.Slot.6-1"
+	storageID := "Disk.Virtual.1:RAID.Slot.6-1"
 	jobid := client.DeletVirtualDisk(systemID, storageID)
 	t.Logf("Job ID %v", jobid)
 	res := client.CheckJobStatus(jobid)
-	assert.Equal(t,res,true)
+	assert.Equal(t, res, true)
 }
 
-func TestCleanVirtualDisksIfAny(t * testing.T){
+func TestCleanVirtualDisksIfAny(t *testing.T) {
 	systemID := "System.Embedded.1"
 	controllerID := "RAID.Slot.6-1"
-	client.CleanVirtualDisksIfAny(systemID,controllerID)
+	client.CleanVirtualDisksIfAny(systemID, controllerID)
 
 }
+
 /*
 name: ephemeral
           #          raid-type: 1
@@ -53,24 +53,38 @@ name: ephemeral
           #            - Disk.Bay.9:Enclosure.Internal.0-1:RAID.Slot.6-1
 */
 
-func TestCreateVirtualDisk(t *testing.T){
+func TestCreateVirtualDisk(t *testing.T) {
 	systemID := "System.Embedded.1"
 	controllerID := "RAID.Slot.6-1"
-	volumeType:= "Mirrored"
+	volumeType := "Mirrored"
 	name := "ephemeral-1"
-	drives := []string {"Disk.Bay.8:Enclosure.Internal.0-1:RAID.Slot.6-1", 
-	                           "Disk.Bay.9:Enclosure.Internal.0-1:RAID.Slot.6-1" }
-	jobid := client.CreateVirtualDisk(systemID,controllerID,volumeType,name, drives) 
+	drives := []string{"Disk.Bay.8:Enclosure.Internal.0-1:RAID.Slot.6-1",
+		"Disk.Bay.9:Enclosure.Internal.0-1:RAID.Slot.6-1"}
+	jobid := client.CreateVirtualDisk(systemID, controllerID, volumeType, name, drives)
 	t.Logf("Job ID %v", jobid)
-	res  := client.CheckJobStatus(jobid)
+	res := client.CheckJobStatus(jobid)
 	t.Logf("%v", res)
-	assert.Equal(t,res,true)
+	assert.Equal(t, res, true)
 
 }
 
-func TestGetNodeUUID(t *testing.T){
+func TestGetNodeUUID(t *testing.T) {
 	systemID := "System.Embedded.1"
-	uuid,_ := client.GetNodeUUID(systemID)
-    t.Logf("UUID %v", uuid )
+	uuid, _ := client.GetNodeUUID(systemID)
+	t.Logf("UUID %v", uuid)
 
+}
+
+func TestEjectISO(t *testing.T) {
+	managerID := "iDRAC.Embedded.1"
+	res := client.EjectISO(managerID, "CD")
+	assert.Equal(t, res, true)
+
+}
+func TestInsertCD(t *testing.T) {
+
+	managerID := "iDRAC.Embedded.1"
+	imageURL := "http://32.68.220.23:31180/a451dcb7-9a17-45a8-8915-f5ab0a175cf6-ubuntu.iso"
+	res := client.InsertISO(managerID, "CD", imageURL)
+	assert.Equal(t, res, true)
 }
