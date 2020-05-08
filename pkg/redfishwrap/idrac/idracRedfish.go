@@ -67,8 +67,8 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 		    return false
 		}
 
-		if timeelapsedInMinutes >= 60 {
-			fmt.Println("\n- FAIL: Timeout of 1 hour has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
+		if timeelapsedInMinutes >= 5 {
+			fmt.Println("\n- FAIL: Timeout of 5 minute has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
 			return true
 			
 		} else if jobInfo.Messages != nil { 
@@ -223,6 +223,7 @@ func (a *IdracRedfishClient)CleanVirtualDisksIfAny(systemID string, controllerID
 				fmt.Printf("Failed to delete virtual disk %v\n",vd)
 				return result
 			}
+                        time.Sleep(time.Second*5) //Sleep in between calls
 			countofVDcreated += 1
 
 		}
