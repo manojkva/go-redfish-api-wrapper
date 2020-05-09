@@ -18,7 +18,7 @@ func TestUpgradeFirmware(t *testing.T) {
 }
 
 func TestCheckJobStatus(t *testing.T) {
-	jobId := "JID_876467251252"
+	jobId := "JID_877590251253"
 	client.CheckJobStatus(jobId)
 }
 
@@ -72,6 +72,13 @@ func TestGetNodeUUID(t *testing.T) {
 	systemID := "System.Embedded.1"
 	uuid, _ := client.GetNodeUUID(systemID)
 	t.Logf("UUID %v", uuid)
+
+}
+func TestGetPowerStatus(t *testing.T) {
+	systemID := "System.Embedded.1"
+	result := client.GetPowerStatus(systemID)
+	t.Logf("Result %v", result)
+        assert.Equal(t,result,true)
 
 }
 

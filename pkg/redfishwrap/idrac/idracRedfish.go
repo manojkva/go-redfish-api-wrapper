@@ -245,3 +245,16 @@ func (a * IdracRedfishClient)GetNodeUUID(systemID string )(string, bool){
 	}
 	return "", false
 }
+
+func (a * IdracRedfishClient)GetPowerStatus(systemID string ) bool{
+
+	ctx := a.createContext()
+	computerSystem, _  := RFWrap.GetSystem(ctx,a.HostIP,systemID)
+
+	if computerSystem != nil{
+                if  computerSystem.PowerState  ==  "On"{
+                    return  true
+               }
+	}
+	return false
+}
