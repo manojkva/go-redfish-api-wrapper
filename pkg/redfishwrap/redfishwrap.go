@@ -139,12 +139,12 @@ func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI stri
 	return getJobID(response)
 }
 
-func ResetServer(ctx context.Context, hostIPV4addr string, systemId string) bool {
+func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, resetRequestBody redfish.ResetRequestBody ) bool {
 
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
-	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_FORCE_RESTART}
+//	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_FORCE_RESTART}
 
 	sl, response, err := redfishApi.ResetSystem(ctx, systemId, resetRequestBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)

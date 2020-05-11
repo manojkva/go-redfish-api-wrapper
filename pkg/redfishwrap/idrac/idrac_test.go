@@ -82,6 +82,22 @@ func TestGetPowerStatus(t *testing.T) {
 
 }
 
+func TestPowerOff(t *testing.T){
+	systemID :=  "System.Embedded.1"
+	result := client.PowerOff(systemID)
+	assert.Equal(t,result,true)
+}
+func TestPowerOn(t *testing.T){
+	systemID :=  "System.Embedded.1"
+	result := client.PowerOn(systemID)
+	assert.Equal(t,result,true)
+}
+func TestRebootServer(t *testing.T){
+	systemID :=  "System.Embedded.1"
+	result := client.RebootServer(systemID)
+	assert.Equal(t,result,true)
+}
+
 func TestEjectISO(t *testing.T) {
 	managerID := "iDRAC.Embedded.1"
 	res := client.EjectISO(managerID, "CD")

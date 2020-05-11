@@ -101,24 +101,25 @@ func (a *IdracRedfishClient) RebootServer(systemID string) bool {
 	ctx := a.createContext()
 
 	//Systems/System.Embedded.1/Actions/ComputerSystem.Reset
+	resetRequestBody := redfish.ResetRequestBody { ResetType: redfish.RESETTYPE_FORCE_RESTART }
 
-	return RFWrap.ResetServer(ctx, a.HostIP, systemID)
+	return RFWrap.ResetServer(ctx, a.HostIP, systemID, resetRequestBody)
 
 }
 
 func (a *IdracRedfishClient) PowerOn(systemID string) bool {
 	ctx := a.createContext()
-	computeSystem := redfish.ComputerSystem{PowerState: redfish.POWERSTATE_ON}
+	resetRequestBody := redfish.ResetRequestBody { ResetType: redfish.RESETTYPE_ON }
 
-	return RFWrap.SetSystem(ctx, a.HostIP, systemID, computeSystem)
+	return RFWrap.ResetServer(ctx, a.HostIP, systemID, resetRequestBody)
+
 }
 
 func (a *IdracRedfishClient) PowerOff(systemID string) bool {
 	ctx := a.createContext()
+	resetRequestBody := redfish.ResetRequestBody { ResetType: redfish.RESETTYPE_GRACEFUL_SHUTDOWN }
 
-	computeSystem := redfish.ComputerSystem{PowerState: redfish.POWERSTATE_OFF}
-
-	return RFWrap.SetSystem(ctx, a.HostIP, systemID, computeSystem)
+	return RFWrap.ResetServer(ctx, a.HostIP, systemID, resetRequestBody)
 }
 
 func (a *IdracRedfishClient) GetVirtualMediaStatus(managerID string, media string) bool {
