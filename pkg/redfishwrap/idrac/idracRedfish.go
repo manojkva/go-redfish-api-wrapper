@@ -53,6 +53,11 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 	start := time.Now()
 	var result bool = false
 
+       if  jobId == ""{
+           fmt.Println("Job ID is null. Returing Failed Job Status")
+           return false
+       }
+
 	for {
 
 		statusCode, jobInfo := RFWrap.GetTask(ctx, a.HostIP, jobId)
@@ -70,9 +75,7 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 		if timeelapsedInMinutes >= 5 {
 			fmt.Println("\n- FAIL: Timeout of 5 minute has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
 			return true
-			
-		} else if jobInfo.Messages != nil { 
-		
+		} else if jobInfo.Messages != nil {
 		if strings.Contains(jobInfo.Messages[0].Message, "failed") {
 			fmt.Println("FAIL")
 			return false
@@ -87,7 +90,7 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 			fmt.Println("Success")
 			result = true
 			break
-		} 
+		}
 		}else {
 			time.Sleep(time.Second*5)
 			continue
@@ -213,7 +216,6 @@ func (a *IdracRedfishClient)CleanVirtualDisksIfAny(systemID string, controllerID
 	if totalvirtualDisks == 0 {
 		fmt.Printf("No existing RAID disks found")
 		result = true
-		
 	} else {
 		for _,vd  := range virtualDisks {
 			jobid  := a.DeletVirtualDisk(systemID,vd)
@@ -224,7 +226,7 @@ func (a *IdracRedfishClient)CleanVirtualDisksIfAny(systemID string, controllerID
 				fmt.Printf("Failed to delete virtual disk %v\n",vd)
 				return result
 			}
-                        time.Sleep(time.Second*5) //Sleep in between calls
+                        time.Sleep(time.Second*10) //Sleep in between calls
 			countofVDcreated += 1
 
 		}

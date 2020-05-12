@@ -222,7 +222,7 @@ func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, contr
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return nil
-	} 
+	}
 	return sl.Members
 }
 
@@ -237,7 +237,7 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	if (response.StatusCode == 200) || (response.StatusCode == 202) {
 	jobid = getJobID(response)
 	}
-	
+
 	return jobid
 
 }

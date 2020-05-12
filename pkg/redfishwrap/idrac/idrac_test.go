@@ -18,7 +18,7 @@ func TestUpgradeFirmware(t *testing.T) {
 }
 
 func TestCheckJobStatus(t *testing.T) {
-	jobId := "JID_877590251253"
+	jobId := ""
 	client.CheckJobStatus(jobId)
 }
 
