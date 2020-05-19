@@ -2,11 +2,14 @@ package idrac
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+	//	"encoding/json"
 
 	RFWrap "github.com/manojkva/go-redfish-api-wrapper/pkg/redfishwrap"
 	redfish "opendev.org/airship/go-redfish/client"
@@ -54,6 +57,16 @@ func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) {
 	fmt.Printf("%v", jobID)
 
 	a.CheckJobStatus(jobID)
+}
+
+func (a *IdracRedfishClient) GetPendingJobs() int {
+	ctx := a.createContext()
+	statusCode, pendingJobCount := RFWrap.GetTaskList(ctx, a.HostIP)
+
+	if statusCode == http.StatusOK {
+		return pendingJobCount
+	}
+	return 0
 }
 
 func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
@@ -187,28 +200,63 @@ func (a *IdracRedfishClient) GetVirtualDisks(systemID string, controllerID strin
 }
 
 func (a *IdracRedfishClient) DeletVirtualDisk(systemID string, storageID string) string {
-	ctx := a.createContext()
 
-	return RFWrap.DeleteVirtualDisk(ctx, a.HostIP, systemID, storageID)
+	if joblistEmpty, _ := a.IsJobListEmpty(); joblistEmpty != false {
+		ctx := a.createContext()
+		return RFWrap.DeleteVirtualDisk(ctx, a.HostIP, systemID, storageID)
+	}
+	return "" //failure send JobID = ""
 }
 
 func (a *IdracRedfishClient) CreateVirtualDisk(systemID string, controllerID string, volumeType string, name string, urilist []string) string {
-	ctx := a.createContext()
+	if joblistEmpty, _ := a.IsJobListEmpty(); joblistEmpty != false {
+		ctx := a.createContext()
 
-	drives := []redfish.IdRef{}
+		drives := []redfish.IdRef{}
 
-	for _, uri := range urilist {
-		driveinfo := fmt.Sprintf("/redfish/v1/Systems/%s/Storage/Drives/%s", systemID, uri)
-		drives = append(drives, redfish.IdRef{OdataId: driveinfo})
+		for _, uri := range urilist {
+			driveinfo := fmt.Sprintf("/redfish/v1/Systems/%s/Storage/Drives/%s", systemID, uri)
+			drives = append(drives, redfish.IdRef{OdataId: driveinfo})
+		}
+
+		createvirtualBodyReq := redfish.CreateVirtualDiskRequestBody{
+			VolumeType: redfish.VolumeType(volumeType),
+			Name:       name,
+			Drives:     drives,
+		}
+
+		return RFWrap.CreateVirtualDisk(ctx, a.HostIP, systemID, controllerID, createvirtualBodyReq)
 	}
+	return "" // failure send JobID  = ""
+}
 
-	createvirtualBodyReq := redfish.CreateVirtualDiskRequestBody{
-		VolumeType: redfish.VolumeType(volumeType),
-		Name:       name,
-		Drives:     drives,
+func (a *IdracRedfishClient) IsJobListEmpty() (bool, error) {
+
+	if RedfishSleepTimeSeconds == 0 {
+		RedfishSleepTimeSeconds = 100 // if environment variable is not set
 	}
+	timeout := time.NewTimer(time.Second * time.Duration(RedfishSleepTimeSeconds))
+	ticker := time.NewTicker(3000 * time.Millisecond)
+	for {
+		select {
+		case <-timeout.C:
+			timeout.Stop()
+			ticker.Stop()
+			return false, errors.New("Getting Pending Jobs timed out")
+		case <-ticker.C:
+			fmt.Println("Checking Pending Jobs ..")
+			pendingJobs := a.GetPendingJobs()
+			if pendingJobs == 0 {
+				timeout.Stop()
+				ticker.Stop()
+				return true, nil
+			}
+		}
+	}
+	timeout.Stop()
+	ticker.Stop()
+	return false, errors.New("Failed to Get Pending Jobs")
 
-	return RFWrap.CreateVirtualDisk(ctx, a.HostIP, systemID, controllerID, createvirtualBodyReq)
 }
 
 func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerID string) bool {
@@ -218,7 +266,7 @@ func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerI
 	// Get the list of VirtualDisks
 	virtualDisks := a.GetVirtualDisks(systemID, controllerID)
 	totalvirtualDisks := len(virtualDisks)
-	var countofVDcreated int = 0
+	var countofVDdeleted int = 0
 	// for testing skip the OS Disk
 	//virtualDisks = virtualDisks[1:]
 	if totalvirtualDisks == 0 {
@@ -234,12 +282,12 @@ func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerI
 				fmt.Printf("Failed to delete virtual disk %v\n", vd)
 				return result
 			}
-			time.Sleep(time.Second * time.Duration(RedfishSleepTimeSeconds)) //Sleep in between calls
-			countofVDcreated += 1
+		//	time.Sleep(time.Second * time.Duration(RedfishSleepTimeSeconds)) //Sleep in between calls
+			countofVDdeleted += 1
 
 		}
 	}
-	if countofVDcreated != totalvirtualDisks {
+	if countofVDdeleted != totalvirtualDisks {
 		result = false
 	}
 

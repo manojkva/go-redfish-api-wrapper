@@ -9,7 +9,7 @@ import (
 	redfish "opendev.org/airship/go-redfish/client"
 	"time"
 	//     "reflect"
-	"github.com/antihax/optional"
+//	"github.com/antihax/optional"
 	_nethttp "net/http"
 	"os"
 	"regexp"
@@ -75,6 +75,13 @@ func GetTask(ctx context.Context, hostIPV4addr string, taskID string) (int, redf
 	return response.StatusCode, sl
 }
 
+func GetTaskList(ctx context.Context, hostIPV4addr string) (int,int){
+	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
+	sl, response, err := redfishApi.GetTaskList(ctx)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	return response.StatusCode, len(sl.Members)
+}
+
 func GetVirtualMediaConnectedStatus(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	//	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, "iDRAC.Embedded.1", "CD")
@@ -100,12 +107,13 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 		fmt.Println(err)
 	}
 	defer filehandle.Close()
-	reqBody := redfish.FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
+	reqBody := redfish.InlineObject{ SoftwareImage : filehandle,}
+	//FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
 	headerInfo := make(map[string]string)
 	headerInfo["if-match"] = etag
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
-	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, &reqBody)
+	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, reqBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
 	location, _ := response.Location()
 	return string(location.RequestURI()), err
@@ -232,7 +240,9 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 
 	response, err := redfishApi.DeleteVirtualdisk(ctx, systemID, storageID)
 
-	fmt.Printf("%+v %+v", response, err)
+	fmt.Printf("\n%v\n", response.Request)
+
+	fmt.Printf("\n%+v\n %+v\n", response, err)
 	var jobid string = ""
 	if (response.StatusCode == 200) || (response.StatusCode == 202) {
 	jobid = getJobID(response)
@@ -246,7 +256,8 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	fmt.Printf("\n%v\n", response.Request)
+	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
 	var jobid string  = ""
 	if (response.StatusCode == 200) || (response.StatusCode == 202){
 	jobid = getJobID(response)

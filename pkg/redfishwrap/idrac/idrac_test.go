@@ -1,8 +1,11 @@
 package idrac
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
+	//"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var client = &IdracRedfishClient{
@@ -20,6 +23,20 @@ func TestUpgradeFirmware(t *testing.T) {
 func TestCheckJobStatus(t *testing.T) {
 	jobId := ""
 	client.CheckJobStatus(jobId)
+}
+
+func TestGetPendingTasks(t *testing.T){
+    numberOfJobs := client.GetPendingJobs()
+	fmt.Println(numberOfJobs)
+	assert.Equal(t, 0,numberOfJobs)
+    
+}
+
+func TestCheckPendingJobs(t *testing.T){
+	
+	anyjobs,err  := client.IsJobListEmpty()
+	assert.Equal(t,true, anyjobs)
+	fmt.Printf("%v", err)
 }
 
 func TestGetVirtualDisks(t *testing.T) {
