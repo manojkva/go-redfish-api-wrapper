@@ -138,3 +138,8 @@ func TestGetSystemID(t *testing.T) {
 	systemId := client.GetSystemID()
 	fmt.Printf("%+v", systemId)
 }
+
+func TestGetRedfishVer(t *testing.T) {
+	redfishVer := client.GetRedfishVer()
+	fmt.Printf("%+v", redfishVer)
+}

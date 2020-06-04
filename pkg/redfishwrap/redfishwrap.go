@@ -324,3 +324,17 @@ func ListSystems(ctx context.Context, hostIPV4addr string) []string {
 	return retrieveStringsFromIdrefList(idrefs)
 
 }
+
+func GetRoot(ctx context.Context, hostIPV4addr string) *redfish.Root {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	sl, response, err := redfishApi.GetRoot(ctx)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		fmt.Printf("%+v", err)
+		return nil
+	}
+	fmt.Printf("\n%v\n", response.Request)
+	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	return &sl
+
+}

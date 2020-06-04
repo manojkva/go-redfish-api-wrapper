@@ -338,3 +338,15 @@ func (a *IdracRedfishClient) GetSystemID() string {
 	fmt.Printf("%+v", systemList)
 	return systemList[0]
 }
+
+func (a *IdracRedfishClient) GetRedfishVer() string {
+	ctx := a.createContext()
+	root := RFWrap.GetRoot(ctx, a.HostIP)
+	if root == nil {
+		fmt.Printf("Failed to retreive RedfishVersion")
+		return ""
+	}
+	redfishVersion := root.RedfishVersion
+	fmt.Printf("Redfish Version : %+v", redfishVersion)
+	return redfishVersion
+}
