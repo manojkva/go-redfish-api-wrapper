@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	redfish "opendev.org/airship/go-redfish/client"
 	"strings"
 	"time"
+
+	redfish "opendev.org/airship/go-redfish/client"
+
 	//     "reflect"
 	//	"github.com/antihax/optional"
 	_nethttp "net/http"
 	"os"
 	"regexp"
+
 	//     "io/ioutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -239,13 +242,15 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 
 	response, err := redfishApi.DeleteVirtualdisk(ctx, systemID, storageID)
 
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return ""
+	}
+
 	fmt.Printf("\n%v\n", response.Request)
 
 	fmt.Printf("\n%+v\n %+v\n", response, err)
 	var jobid string = ""
-	if (response.StatusCode == 200) || (response.StatusCode == 202) {
-		jobid = getJobID(response)
-	}
+	jobid = getJobID(response)
 
 	return jobid
 
@@ -255,12 +260,13 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return ""
+	}
 	fmt.Printf("\n%v\n", response.Request)
 	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
 	var jobid string = ""
-	if (response.StatusCode == 200) || (response.StatusCode == 202) {
-		jobid = getJobID(response)
-	}
+	jobid = getJobID(response)
 	return jobid
 }
 
@@ -268,12 +274,16 @@ func ListManagers(ctx context.Context, hostIPV4addr string) []string {
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListManagers(ctx)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		fmt.Printf("%+v", err)
+		return nil
+	}
 	fmt.Printf("\n%v\n", response.Request)
 	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
 
 	idrefs := sl.Members
 
-	if (response.StatusCode != 200) || (idrefs == nil) {
+	if idrefs == nil {
 		fmt.Printf("Failed to retrieve Manager ID")
 		return nil
 	}
@@ -298,12 +308,16 @@ func ListSystems(ctx context.Context, hostIPV4addr string) []string {
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListSystems(ctx)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		fmt.Printf("%+v", err)
+		return nil
+	}
 	fmt.Printf("\n%v\n", response.Request)
 	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
 
 	idrefs := sl.Members
 
-	if (response.StatusCode != 200) || (idrefs == nil) {
+	if idrefs == nil {
 		fmt.Printf("Failed to retrieve System ID")
 		return nil
 	}
