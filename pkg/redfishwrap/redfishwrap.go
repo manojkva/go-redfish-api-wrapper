@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	redfish "opendev.org/airship/go-redfish/client"
+	"strings"
 	"time"
 	//     "reflect"
-//	"github.com/antihax/optional"
+	//	"github.com/antihax/optional"
 	_nethttp "net/http"
 	"os"
 	"regexp"
@@ -32,16 +33,15 @@ func prettyPrint(i interface{}) string {
 	return string(s)
 }
 
-func checkStatusCodeforGet(statuscode int)bool{
-	sucessCodes  := []int{200, 204,202}
-	for  _,x := range sucessCodes{
+func checkStatusCodeforGet(statuscode int) bool {
+	sucessCodes := []int{200, 204, 202}
+	for _, x := range sucessCodes {
 		if statuscode == x {
 			return true
 		}
 	}
 	return false
 }
-
 
 var tr *http.Transport = &http.Transport{
 	MaxIdleConns:       10,
@@ -75,7 +75,7 @@ func GetTask(ctx context.Context, hostIPV4addr string, taskID string) (int, redf
 	return response.StatusCode, sl
 }
 
-func GetTaskList(ctx context.Context, hostIPV4addr string) (int,int){
+func GetTaskList(ctx context.Context, hostIPV4addr string) (int, int) {
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.GetTaskList(ctx)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
@@ -107,7 +107,7 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 		fmt.Println(err)
 	}
 	defer filehandle.Close()
-	reqBody := redfish.InlineObject{ SoftwareImage : filehandle,}
+	reqBody := redfish.InlineObject{SoftwareImage: filehandle}
 	//FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
 	headerInfo := make(map[string]string)
 	headerInfo["if-match"] = etag
@@ -147,12 +147,12 @@ func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI stri
 	return getJobID(response)
 }
 
-func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, resetRequestBody redfish.ResetRequestBody ) bool {
+func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, resetRequestBody redfish.ResetRequestBody) bool {
 
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
-//	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_FORCE_RESTART}
+	//	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_FORCE_RESTART}
 
 	sl, response, err := redfishApi.ResetSystem(ctx, systemId, resetRequestBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
@@ -174,7 +174,7 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 	return true
 }
 
-func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redfish.ComputerSystem, bool){
+func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redfish.ComputerSystem, bool) {
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -187,7 +187,6 @@ func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redf
 
 	return &sl, true
 
-
 }
 
 func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
@@ -198,7 +197,7 @@ func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID strin
 
 	sl, response, err := redfishApi.EjectVirtualMedia(ctx, managerID, media, body)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
-	if err != nil ||(checkStatusCodeforGet(response.StatusCode) != true) {
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
 
@@ -221,7 +220,7 @@ func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID stri
 
 }
 
-func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, controllerID string) []redfish.IdRef{
+func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, controllerID string) []redfish.IdRef {
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -245,7 +244,7 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	fmt.Printf("\n%+v\n %+v\n", response, err)
 	var jobid string = ""
 	if (response.StatusCode == 200) || (response.StatusCode == 202) {
-	jobid = getJobID(response)
+		jobid = getJobID(response)
 	}
 
 	return jobid
@@ -258,9 +257,56 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
 	fmt.Printf("\n%v\n", response.Request)
 	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
-	var jobid string  = ""
-	if (response.StatusCode == 200) || (response.StatusCode == 202){
-	jobid = getJobID(response)
+	var jobid string = ""
+	if (response.StatusCode == 200) || (response.StatusCode == 202) {
+		jobid = getJobID(response)
 	}
-    return jobid
+	return jobid
+}
+
+func ListManagers(ctx context.Context, hostIPV4addr string) []string {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	sl, response, err := redfishApi.ListManagers(ctx)
+	fmt.Printf("\n%v\n", response.Request)
+	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+
+	idrefs := sl.Members
+
+	if (response.StatusCode != 200) || (idrefs == nil) {
+		fmt.Printf("Failed to retrieve Manager ID")
+		return nil
+	}
+	return retrieveStringsFromIdrefList(idrefs)
+
+}
+
+func retrieveStringsFromIdrefList(idrefs []redfish.IdRef) []string {
+	idList := []string{}
+	for _, id := range idrefs {
+		fmt.Printf("Idref ID %v\n", id.OdataId)
+		idInfo := strings.Split(id.OdataId, "/")
+		if idInfo != nil {
+			idList = append(idList, idInfo[len(idInfo)-1])
+		}
+	}
+	return idList
+
+}
+
+func ListSystems(ctx context.Context, hostIPV4addr string) []string {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	sl, response, err := redfishApi.ListSystems(ctx)
+	fmt.Printf("\n%v\n", response.Request)
+	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+
+	idrefs := sl.Members
+
+	if (response.StatusCode != 200) || (idrefs == nil) {
+		fmt.Printf("Failed to retrieve System ID")
+		return nil
+	}
+	return retrieveStringsFromIdrefList(idrefs)
+
 }

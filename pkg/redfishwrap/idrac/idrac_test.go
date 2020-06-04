@@ -11,11 +11,11 @@ import (
 var client = &IdracRedfishClient{
 	Username: "root",
 	Password: "Abc.1234",
-	HostIP:   "32.68.220.135",
+	HostIP:   "",
 }
 
 func TestUpgradeFirmware(t *testing.T) {
-	filelocation := "/home/ekuamaj/workspace/iDRAC-with-Lifecycle-Controller_Firmware_NKGJW_WN64_3.31.31.31_A00.EXE"
+	filelocation := "/home/test/workspace/iDRAC-with-Lifecycle-Controller_Firmware_NKGJW_WN64_3.31.31.31_A00.EXE"
 	client.UpgradeFirmware(filelocation)
 
 }
@@ -25,17 +25,17 @@ func TestCheckJobStatus(t *testing.T) {
 	client.CheckJobStatus(jobId)
 }
 
-func TestGetPendingTasks(t *testing.T){
-    numberOfJobs := client.GetPendingJobs()
+func TestGetPendingTasks(t *testing.T) {
+	numberOfJobs := client.GetPendingJobs()
 	fmt.Println(numberOfJobs)
-	assert.Equal(t, 0,numberOfJobs)
-    
+	assert.Equal(t, 0, numberOfJobs)
+
 }
 
-func TestCheckPendingJobs(t *testing.T){
-	
-	anyjobs,err  := client.IsJobListEmpty()
-	assert.Equal(t,true, anyjobs)
+func TestCheckPendingJobs(t *testing.T) {
+
+	anyjobs, err := client.IsJobListEmpty()
+	assert.Equal(t, true, anyjobs)
 	fmt.Printf("%v", err)
 }
 
@@ -95,24 +95,24 @@ func TestGetPowerStatus(t *testing.T) {
 	systemID := "System.Embedded.1"
 	result := client.GetPowerStatus(systemID)
 	t.Logf("Result %v", result)
-        assert.Equal(t,result,true)
+	assert.Equal(t, result, true)
 
 }
 
-func TestPowerOff(t *testing.T){
-	systemID :=  "System.Embedded.1"
+func TestPowerOff(t *testing.T) {
+	systemID := "System.Embedded.1"
 	result := client.PowerOff(systemID)
-	assert.Equal(t,result,true)
+	assert.Equal(t, result, true)
 }
-func TestPowerOn(t *testing.T){
-	systemID :=  "System.Embedded.1"
+func TestPowerOn(t *testing.T) {
+	systemID := "System.Embedded.1"
 	result := client.PowerOn(systemID)
-	assert.Equal(t,result,true)
+	assert.Equal(t, result, true)
 }
-func TestRebootServer(t *testing.T){
-	systemID :=  "System.Embedded.1"
+func TestRebootServer(t *testing.T) {
+	systemID := "System.Embedded.1"
 	result := client.RebootServer(systemID)
-	assert.Equal(t,result,true)
+	assert.Equal(t, result, true)
 }
 
 func TestEjectISO(t *testing.T) {
@@ -124,7 +124,17 @@ func TestEjectISO(t *testing.T) {
 func TestInsertCD(t *testing.T) {
 
 	managerID := "iDRAC.Embedded.1"
-	imageURL := "http://32.68.220.23:31180/a451dcb7-9a17-45a8-8915-f5ab0a175cf6-ubuntu.iso"
+	imageURL := "http://32.168.220.23:31180/a451dcb7-9a17-45a8-8915-f5ab0a175cf6-ubuntu.iso"
 	res := client.InsertISO(managerID, "CD", imageURL)
 	assert.Equal(t, res, true)
+}
+
+func TestGetManagerID(t *testing.T) {
+	managerId := client.GetManagerID()
+	fmt.Printf("%+v", managerId)
+}
+
+func TestGetSystemID(t *testing.T) {
+	systemId := client.GetSystemID()
+	fmt.Printf("%+v", systemId)
 }

@@ -282,7 +282,7 @@ func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerI
 				fmt.Printf("Failed to delete virtual disk %v\n", vd)
 				return result
 			}
-		//	time.Sleep(time.Second * time.Duration(RedfishSleepTimeSeconds)) //Sleep in between calls
+			//	time.Sleep(time.Second * time.Duration(RedfishSleepTimeSeconds)) //Sleep in between calls
 			countofVDdeleted += 1
 
 		}
@@ -316,4 +316,25 @@ func (a *IdracRedfishClient) GetPowerStatus(systemID string) bool {
 		}
 	}
 	return false
+}
+
+func (a *IdracRedfishClient) GetManagerID() string {
+	ctx := a.createContext()
+	managerList := RFWrap.ListManagers(ctx, a.HostIP)
+	if managerList == nil {
+		fmt.Printf("Failed to retreive manager ID")
+		return ""
+	}
+	fmt.Printf("%+v", managerList)
+	return managerList[0]
+}
+func (a *IdracRedfishClient) GetSystemID() string {
+	ctx := a.createContext()
+	systemList := RFWrap.ListSystems(ctx, a.HostIP)
+	if systemList == nil {
+		fmt.Printf("Failed to retreive system ID")
+		return ""
+	}
+	fmt.Printf("%+v", systemList)
+	return systemList[0]
 }
