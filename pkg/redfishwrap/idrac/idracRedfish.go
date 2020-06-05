@@ -158,7 +158,8 @@ func (a *IdracRedfishClient) EjectISO(managerID string, media string) bool {
 
 func (a *IdracRedfishClient) SetOneTimeBoot(systemID string) bool {
 	ctx := a.createContext()
-	computeSystem := redfish.ComputerSystem{Boot: redfish.Boot{BootSourceOverrideEnabled: "Once"}}
+	computeSystem := redfish.ComputerSystem{Boot: redfish.Boot{BootSourceOverrideEnabled: redfish.BOOTSOURCEOVERRIDEENABLED_ONCE,
+                                                                    BootSourceOverrideTarget: redfish.BOOTSOURCE_CD }}
 
 	return RFWrap.SetSystem(ctx, a.HostIP, systemID, computeSystem)
 
