@@ -297,7 +297,12 @@ func retrieveStringsFromIdrefList(idrefs []redfish.IdRef) []string {
 		fmt.Printf("Idref ID %v\n", id.OdataId)
 		idInfo := strings.Split(id.OdataId, "/")
 		if idInfo != nil {
-			idList = append(idList, idInfo[len(idInfo)-1])
+			lenOflist := len(idInfo)
+			managerId := idInfo[lenOflist-1]
+			if (managerId == "") && (lenOflist >= 3) {
+				managerId = idInfo[lenOflist-2]
+			}
+			idList = append(idList, managerId)
 		}
 	}
 	return idList
