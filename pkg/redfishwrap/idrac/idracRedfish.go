@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	//	"encoding/json"
 
 	RFWrap "github.com/manojkva/go-redfish-api-wrapper/pkg/redfishwrap"
@@ -16,9 +17,14 @@ import (
 )
 
 var RedfishSleepTimeSeconds int = 0
+var JobCheckTimeoutMinutes int  = 0
 
 func init() {
 	RedfishSleepTimeSeconds, _ = strconv.Atoi(os.Getenv("REDFISH_SLEEPTIME_SECS"))
+	JobCheckTimeoutMinutes,_ = strconv.Atoi(os.Getenv("REDFISH_JOBCHECKTIMEOUT_MTS"))
+	if JobCheckTimeoutMinutes == 0{
+		JobCheckTimeoutMinutes = 10 // five minutes assumed default
+	}
 
 }
 
@@ -38,7 +44,10 @@ func (a *IdracRedfishClient) createContext() context.Context {
 	return ctx
 }
 
-func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) {
+func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) bool {
+	var imageURI string
+	var err error
+	var result bool = false
 
 	ctx := a.createContext()
 
@@ -48,15 +57,35 @@ func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) {
 
 	etag := RFWrap.GetETagHttpURI(ctx, a.HostIP)
 	fmt.Printf("%v", etag)
-	imageURI, _ := RFWrap.HTTPUriDownload(ctx, a.HostIP, filelocation, etag)
+	if etag == "" {
+		fmt.Printf("Failed to extract ETAG..\n")
+		return false
+	}
+	if joblistEmpty, _ := a.IsJobListEmpty(); joblistEmpty == false {
+		fmt.Printf("Pending Jobs not empty.Hence returning/n")
+		return false
+	}
 
+	imageURI, err = RFWrap.HTTPUriDownload(ctx, a.HostIP, filelocation, etag)
 	fmt.Printf("%v", imageURI)
+
+	if (imageURI == "") || (err != nil) {
+		fmt.Printf("Failed to retrive ImageURI\n")
+		return false
+	}
 
 	jobID := RFWrap.SimpleUpdateRequest(ctx, a.HostIP, imageURI)
 
 	fmt.Printf("%v", jobID)
+    //Check if Update succeeded. A scheduledl Job too is fine.
+	result = a.CheckJobStatus(jobID, true)
 
-	a.CheckJobStatus(jobID)
+	if result != false {
+		if a.RebootServer(a.GetSystemID()) {
+			result = a.CheckJobStatus(jobID,false)
+		}
+	}
+	return result
 }
 
 func (a *IdracRedfishClient) GetPendingJobs() int {
@@ -69,7 +98,7 @@ func (a *IdracRedfishClient) GetPendingJobs() int {
 	return 0
 }
 
-func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
+func (a *IdracRedfishClient) CheckJobStatus(jobId string, setScheduledasTrue bool) bool {
 	ctx := a.createContext()
 	start := time.Now()
 	var result bool = false
@@ -93,7 +122,7 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 			return false
 		}
 
-		if timeelapsedInMinutes >= 5 {
+		if timeelapsedInMinutes >= float64(JobCheckTimeoutMinutes) {
 			fmt.Println("\n- FAIL: Timeout of 5 minute has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
 			return false
 		} else if jobInfo.Messages != nil {
@@ -101,7 +130,7 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string) bool {
 				fmt.Println("FAIL")
 				return false
 
-			} else if strings.Contains(jobInfo.Messages[0].Message, "scheduled") {
+			} else if strings.Contains(jobInfo.Messages[0].Message, "scheduled") && (setScheduledasTrue) {
 				//	fmt.Prinln("\n- PASS, job ID %s successfully marked as scheduled, powering on or rebooting the server to apply the update" % data[u"Id"] ")
 				result = true
 				break
@@ -159,7 +188,7 @@ func (a *IdracRedfishClient) EjectISO(managerID string, media string) bool {
 func (a *IdracRedfishClient) SetOneTimeBoot(systemID string) bool {
 	ctx := a.createContext()
 	computeSystem := redfish.ComputerSystem{Boot: redfish.Boot{BootSourceOverrideEnabled: redfish.BOOTSOURCEOVERRIDEENABLED_ONCE,
-                                                                    BootSourceOverrideTarget: redfish.BOOTSOURCE_CD }}
+		BootSourceOverrideTarget: redfish.BOOTSOURCE_CD}}
 
 	return RFWrap.SetSystem(ctx, a.HostIP, systemID, computeSystem)
 
@@ -277,7 +306,7 @@ func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerI
 		for _, vd := range virtualDisks {
 			jobid := a.DeletVirtualDisk(systemID, vd)
 			fmt.Printf("Delete Job ID %v\n", jobid)
-			result = a.CheckJobStatus(jobid)
+			result = a.CheckJobStatus(jobid,false)
 
 			if result == false {
 				fmt.Printf("Failed to delete virtual disk %v\n", vd)

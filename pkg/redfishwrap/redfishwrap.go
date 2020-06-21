@@ -12,7 +12,7 @@ import (
 	redfish "opendev.org/airship/go-redfish/client"
 
 	//     "reflect"
-	//	"github.com/antihax/optional"
+	"github.com/antihax/optional"
 	_nethttp "net/http"
 	"os"
 	"regexp"
@@ -37,7 +37,7 @@ func prettyPrint(i interface{}) string {
 }
 
 func checkStatusCodeforGet(statuscode int) bool {
-	sucessCodes := []int{200, 204, 202}
+	sucessCodes := []int{200, 204, 202, 201}
 	for _, x := range sucessCodes {
 		if statuscode == x {
 			return true
@@ -101,6 +101,9 @@ func UpdateService(ctx context.Context, hostIPV4addr string) string {
 	// call the UpdateService and get the HttpPushURi
 	sl, response, err := redfishApi.UpdateService(ctx)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return ""
+	}
 	return sl.HttpPushUri
 }
 
@@ -108,15 +111,19 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 	filehandle, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err)
+		return "", err
 	}
 	defer filehandle.Close()
-	reqBody := FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
+	reqBody := redfish.FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
 	headerInfo := make(map[string]string)
 	headerInfo["if-match"] = etag
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
-	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, reqBody)
+	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, &reqBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return "", err
+	}
 	location, _ := response.Location()
 	return string(location.RequestURI()), err
 
@@ -126,6 +133,9 @@ func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return ""
+	}
 	etag := response.Header["Etag"]
 	fmt.Printf("%v", etag[0])
 	return etag[0]
@@ -146,6 +156,9 @@ func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI stri
 	reqBody.ImageURI = localUriImage
 	sl, response, err := redfishApi.UpdateServiceSimpleUpdate(ctx, *reqBody)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return ""
+	}
 	return getJobID(response)
 }
 
