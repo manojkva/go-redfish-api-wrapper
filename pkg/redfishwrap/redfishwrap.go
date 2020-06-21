@@ -110,8 +110,7 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 		fmt.Println(err)
 	}
 	defer filehandle.Close()
-	reqBody := redfish.InlineObject{SoftwareImage: filehandle}
-	//FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
+	reqBody := FirmwareInventoryDownloadImageOpts{SoftwareImage: optional.NewInterface(filehandle)}
 	headerInfo := make(map[string]string)
 	headerInfo["if-match"] = etag
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
