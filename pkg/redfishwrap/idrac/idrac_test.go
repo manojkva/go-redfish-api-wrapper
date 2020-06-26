@@ -14,6 +14,11 @@ var client = &IdracRedfishClient{
 	HostIP:   "",
 }
 
+func TestGetFirmwareDetails(t *testing.T) {
+	name, version, updateable := client.GetFirwareDetails("Life")
+	fmt.Printf("%+v,%+v,%+v", name, version, updateable)
+}
+
 func TestUpgradeFirmware(t *testing.T) {
 	filelocation := "/tmp/BIOS_R6HXJ_WN64_2.6.4.EXE"
 	client.UpgradeFirmware(filelocation)
@@ -22,7 +27,7 @@ func TestUpgradeFirmware(t *testing.T) {
 
 func TestCheckJobStatus(t *testing.T) {
 	jobId := ""
-	client.CheckJobStatus(jobId,false)
+	client.CheckJobStatus(jobId, false)
 }
 
 func TestGetPendingTasks(t *testing.T) {
@@ -51,7 +56,7 @@ func TestDeleteVirtualDisk(t *testing.T) {
 	storageID := "Disk.Virtual.1:RAID.Slot.6-1"
 	jobid := client.DeletVirtualDisk(systemID, storageID)
 	t.Logf("Job ID %v", jobid)
-	res := client.CheckJobStatus(jobid,false)
+	res := client.CheckJobStatus(jobid, false)
 	assert.Equal(t, res, true)
 }
 
@@ -79,7 +84,7 @@ func TestCreateVirtualDisk(t *testing.T) {
 		"Disk.Bay.9:Enclosure.Internal.0-1:RAID.Slot.6-1"}
 	jobid := client.CreateVirtualDisk(systemID, controllerID, volumeType, name, drives)
 	t.Logf("Job ID %v", jobid)
-	res := client.CheckJobStatus(jobid,false)
+	res := client.CheckJobStatus(jobid, false)
 	t.Logf("%v", res)
 	assert.Equal(t, res, true)
 

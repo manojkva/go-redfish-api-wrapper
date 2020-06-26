@@ -129,6 +129,16 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 
 }
 
+func GetFirwareInventory(ctx context.Context, hostIPV4addr string) *redfish.Collection {
+	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
+	sl, response, err := redfishApi.FirmwareInventory(ctx)
+	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		return nil
+	}
+	return &sl
+}
+
 func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
@@ -354,4 +364,17 @@ func GetRoot(ctx context.Context, hostIPV4addr string) *redfish.Root {
 	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
 	return &sl
 
+}
+
+func GetSoftwareInventory(ctx context.Context, hostIPV4addr string, softwareId string) *redfish.SoftwareInventory {
+	headerInfo := make(map[string]string)
+	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	sl, response, err := redfishApi.GetSoftwareInventory(ctx, softwareId)
+	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		fmt.Printf("%+v", err)
+		return nil
+	}
+	fmt.Printf("\n%v\n", response.Request)
+	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	return &sl
 }

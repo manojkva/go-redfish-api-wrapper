@@ -380,3 +380,39 @@ func (a *IdracRedfishClient) GetRedfishVer() string {
 	fmt.Printf("Redfish Version : %+v", redfishVersion)
 	return redfishVersion
 }
+
+func (a *IdracRedfishClient) GetFirwareDetails(firmwarename string) (name string, version string, updateable bool) {
+
+
+	ctx := a.createContext()
+
+	firmwareInv := RFWrap.GetFirwareInventory(ctx, a.HostIP)
+	if firmwareInv == nil {
+		fmt.Printf("Failed to retreive FirmwareInventory")
+		return "", "", false
+	}
+	for _, id := range firmwareInv.Members{
+		var softwareId string
+
+		fmt.Printf("%v", id.OdataId)
+		fd := strings.Split(id.OdataId, "/")
+		if fd != nil {
+			softwareId = fd[len(fd)-1]
+			fmt.Printf("Software Id %v\n",softwareId)
+
+			softwareInv  := RFWrap.GetSoftwareInventory(ctx,a.HostIP,softwareId)
+			fmt.Printf("Software  Inv : %+v\n",softwareInv)
+			name = softwareInv.Name
+			version = *softwareInv.Version
+			updateable = *softwareInv.Updateable
+			fmt.Printf("%+v,%+v, %+v", name,version,updateable)
+
+			if strings.Contains( strings.ToLower(name), strings.ToLower(firmwarename)){
+				return name,version,updateable
+			}
+
+		}
+	}
+	return "", "", false
+
+}
