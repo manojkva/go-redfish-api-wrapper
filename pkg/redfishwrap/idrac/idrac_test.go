@@ -15,7 +15,7 @@ var client = &IdracRedfishClient{
 }
 
 func TestGetFirmwareDetails(t *testing.T) {
-	name, version, updateable := client.GetFirwareDetails("Life")
+	name, version, updateable := client.GetFirmwareDetails("Life")
 	fmt.Printf("%+v,%+v,%+v", name, version, updateable)
 }
 

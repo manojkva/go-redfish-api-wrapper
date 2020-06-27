@@ -123,7 +123,7 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string, setScheduledasTrue boo
 		}
 
 		if timeelapsedInMinutes >= float64(JobCheckTimeoutMinutes) {
-			fmt.Println("\n- FAIL: Timeout of 5 minute has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue")
+			fmt.Printf("\n- FAIL: Timeout of %v minute has been hit, update job should of already been marked completed. Check the iDRAC job queue and LC logs to debug the issue\n",JobCheckTimeoutMinutes)
 			return false
 		} else if jobInfo.Messages != nil {
 			if strings.Contains(jobInfo.Messages[0].Message, "Failed") {
@@ -381,7 +381,7 @@ func (a *IdracRedfishClient) GetRedfishVer() string {
 	return redfishVersion
 }
 
-func (a *IdracRedfishClient) GetFirwareDetails(firmwarename string) (name string, version string, updateable bool) {
+func (a *IdracRedfishClient) GetFirmwareDetails(firmwarename string) (name string, version string, updateable bool) {
 
 
 	ctx := a.createContext()
