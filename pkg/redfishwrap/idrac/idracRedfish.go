@@ -14,6 +14,7 @@ import (
 
 	RFWrap "github.com/manojkva/go-redfish-api-wrapper/pkg/redfishwrap"
 	redfish "opendev.org/airship/go-redfish/client"
+	"go.uber.org/zap"
 )
 
 var RedfishSleepTimeSeconds int = 0
@@ -33,6 +34,7 @@ type IdracRedfishClient struct {
 	Password  string
 	HostIP    string
 	IDRAC_ver string
+	Logger    *zap.Logger
 }
 
 func (a *IdracRedfishClient) createContext() context.Context {
@@ -41,7 +43,17 @@ func (a *IdracRedfishClient) createContext() context.Context {
 		Password: a.Password,
 	}
 	ctx := context.WithValue(context.Background(), redfish.ContextBasicAuth, auth)
+	ctx = context.WithValue(ctx, "logger", a.Logger)
 	return ctx
+}
+
+func  (a *IdracRedfishClient) Log(loginfo string){
+
+	if  a.Logger == nil{
+		fmt.Println(loginfo)
+	}else{
+		a.Logger.Info(loginfo)
+	}
 }
 
 func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) bool {

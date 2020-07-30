@@ -9,13 +9,16 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	redfish "opendev.org/airship/go-redfish/client"
 
 	//     "reflect"
-	"github.com/antihax/optional"
 	_nethttp "net/http"
 	"os"
 	"regexp"
+
+//	"github.com/Azure/go-autorest/logger"
+	"github.com/antihax/optional"
 
 	//     "io/ioutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -202,9 +205,10 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redfish.ComputerSystem, bool) {
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
+	logger := ctx.Value("logger").(*zap.Logger)
 
 	sl, response, err := redfishApi.GetSystem(ctx, systemID)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return nil, false
