@@ -47,15 +47,6 @@ func (a *IdracRedfishClient) createContext() context.Context {
 	return ctx
 }
 
-func  (a *IdracRedfishClient) Log(loginfo string){
-
-	if  a.Logger == nil{
-		fmt.Println(loginfo)
-	}else{
-		a.Logger.Info(loginfo)
-	}
-}
-
 func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) bool {
 	var imageURI string
 	var err error
