@@ -48,6 +48,7 @@ func (a *IdracRedfishClient) createContext() context.Context {
 }
 
 func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) bool {
+	a.Logger.Info("UpgradeFirmware()") 
 	var imageURI string
 	var err error
 	var result bool = false
@@ -92,6 +93,7 @@ func (a *IdracRedfishClient) UpgradeFirmware(filelocation string) bool {
 }
 
 func (a *IdracRedfishClient) GetPendingJobs() int {
+	a.Logger.Info("GetPendingJobs()") 
 	ctx := a.createContext()
 	statusCode, pendingJobCount := RFWrap.GetTaskList(ctx, a.HostIP)
 
@@ -102,6 +104,7 @@ func (a *IdracRedfishClient) GetPendingJobs() int {
 }
 
 func (a *IdracRedfishClient) CheckJobStatus(jobId string, setScheduledasTrue bool) bool {
+	a.Logger.Info("CheckJobStatus()") 
 	ctx := a.createContext()
 	start := time.Now()
 	var result bool = false
@@ -153,6 +156,7 @@ func (a *IdracRedfishClient) CheckJobStatus(jobId string, setScheduledasTrue boo
 }
 
 func (a *IdracRedfishClient) RebootServer(systemID string) bool {
+	a.Logger.Info("RebootServer()") 
 
 	ctx := a.createContext()
 
@@ -164,6 +168,7 @@ func (a *IdracRedfishClient) RebootServer(systemID string) bool {
 }
 
 func (a *IdracRedfishClient) PowerOn(systemID string) bool {
+	a.Logger.Info("PowerOn()") 
 	ctx := a.createContext()
 	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_ON}
 
@@ -172,6 +177,7 @@ func (a *IdracRedfishClient) PowerOn(systemID string) bool {
 }
 
 func (a *IdracRedfishClient) PowerOff(systemID string) bool {
+	a.Logger.Info("PowerOff()") 
 	ctx := a.createContext()
 	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_GRACEFUL_SHUTDOWN}
 
@@ -179,16 +185,19 @@ func (a *IdracRedfishClient) PowerOff(systemID string) bool {
 }
 
 func (a *IdracRedfishClient) GetVirtualMediaStatus(managerID string, media string) bool {
+	a.Logger.Info("GetVirtualMediaStatus()") 
 	ctx := a.createContext()
 	return RFWrap.GetVirtualMediaConnectedStatus(ctx, a.HostIP, managerID, media)
 }
 
 func (a *IdracRedfishClient) EjectISO(managerID string, media string) bool {
+	a.Logger.Info("EjectISO()") 
 	ctx := a.createContext()
 	return RFWrap.EjectVirtualMedia(ctx, a.HostIP, managerID, media)
 }
 
 func (a *IdracRedfishClient) SetOneTimeBoot(systemID string) bool {
+	a.Logger.Info("SetOneTimeBoot()") 
 	ctx := a.createContext()
 	computeSystem := redfish.ComputerSystem{Boot: redfish.Boot{BootSourceOverrideEnabled: redfish.BOOTSOURCEOVERRIDEENABLED_ONCE,
 		BootSourceOverrideTarget: redfish.BOOTSOURCE_CD}}
@@ -198,6 +207,7 @@ func (a *IdracRedfishClient) SetOneTimeBoot(systemID string) bool {
 }
 
 func (a *IdracRedfishClient) InsertISO(managerID string, mediaID string, imageURL string) bool {
+	a.Logger.Info("InsertISO()") 
 
 	ctx := a.createContext()
 
@@ -213,6 +223,7 @@ func (a *IdracRedfishClient) InsertISO(managerID string, mediaID string, imageUR
 }
 
 func (a *IdracRedfishClient) GetVirtualDisks(systemID string, controllerID string) []string {
+	a.Logger.Info("GetVirtualDisks()") 
 
 	ctx := a.createContext()
 	idrefs := RFWrap.GetVolumes(ctx, a.HostIP, systemID, controllerID)
@@ -233,6 +244,7 @@ func (a *IdracRedfishClient) GetVirtualDisks(systemID string, controllerID strin
 }
 
 func (a *IdracRedfishClient) DeletVirtualDisk(systemID string, storageID string) string {
+	a.Logger.Info("DeleteVirtualDisk()") 
 
 	if joblistEmpty, _ := a.IsJobListEmpty(); joblistEmpty != false {
 		ctx := a.createContext()
@@ -242,6 +254,7 @@ func (a *IdracRedfishClient) DeletVirtualDisk(systemID string, storageID string)
 }
 
 func (a *IdracRedfishClient) CreateVirtualDisk(systemID string, controllerID string, volumeType string, name string, urilist []string) string {
+	a.Logger.Info("CreateVirtualDisk()") 
 	if joblistEmpty, _ := a.IsJobListEmpty(); joblistEmpty != false {
 		ctx := a.createContext()
 
@@ -264,6 +277,7 @@ func (a *IdracRedfishClient) CreateVirtualDisk(systemID string, controllerID str
 }
 
 func (a *IdracRedfishClient) IsJobListEmpty() (bool, error) {
+	a.Logger.Info("IsJobListEmpty()") 
 
 	if RedfishSleepTimeSeconds == 0 {
 		RedfishSleepTimeSeconds = 100 // if environment variable is not set
@@ -293,6 +307,7 @@ func (a *IdracRedfishClient) IsJobListEmpty() (bool, error) {
 }
 
 func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerID string) bool {
+	a.Logger.Info("CleanVirtualDisksIfAny()") 
 
 	var result bool = false
 
@@ -328,6 +343,7 @@ func (a *IdracRedfishClient) CleanVirtualDisksIfAny(systemID string, controllerI
 }
 
 func (a *IdracRedfishClient) GetNodeUUID(systemID string) (string, bool) {
+	a.Logger.Info("GetNodeUUID()") 
 
 	ctx := a.createContext()
 	computerSystem, _ := RFWrap.GetSystem(ctx, a.HostIP, systemID)
@@ -339,6 +355,7 @@ func (a *IdracRedfishClient) GetNodeUUID(systemID string) (string, bool) {
 }
 
 func (a *IdracRedfishClient) GetPowerStatus(systemID string) bool {
+	a.Logger.Info("GetPowerStatus()") 
 
 	ctx := a.createContext()
 	computerSystem, _ := RFWrap.GetSystem(ctx, a.HostIP, systemID)
@@ -352,6 +369,7 @@ func (a *IdracRedfishClient) GetPowerStatus(systemID string) bool {
 }
 
 func (a *IdracRedfishClient) GetManagerID() string {
+	a.Logger.Info("GetManagerID()") 
 	ctx := a.createContext()
 	managerList := RFWrap.ListManagers(ctx, a.HostIP)
 	if managerList == nil {
@@ -362,6 +380,7 @@ func (a *IdracRedfishClient) GetManagerID() string {
 	return managerList[0]
 }
 func (a *IdracRedfishClient) GetSystemID() string {
+	a.Logger.Info("GetSystemID()") 
 	ctx := a.createContext()
 	systemList := RFWrap.ListSystems(ctx, a.HostIP)
 	if systemList == nil {
@@ -373,6 +392,7 @@ func (a *IdracRedfishClient) GetSystemID() string {
 }
 
 func (a *IdracRedfishClient) GetRedfishVer() string {
+	a.Logger.Info("GetRedfishVer()")
 	ctx := a.createContext()
 	root := RFWrap.GetRoot(ctx, a.HostIP)
 	if root == nil {
@@ -385,6 +405,7 @@ func (a *IdracRedfishClient) GetRedfishVer() string {
 }
 
 func (a *IdracRedfishClient) GetFirmwareDetails(firmwarename string) (name string, version string, updateable bool) {
+	a.Logger.Info("GetFirmwareDetails()")
 
 
 	ctx := a.createContext()

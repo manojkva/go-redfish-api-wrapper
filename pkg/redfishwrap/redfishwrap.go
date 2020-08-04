@@ -75,6 +75,7 @@ func createAPIClient(HeaderInfo map[string]string, hostIPV4addr string) *redfish
 }
 
 func GetTask(ctx context.Context, hostIPV4addr string, taskID string) (int, redfish.Task) {
+	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.GetTask(ctx, taskID)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
@@ -82,6 +83,7 @@ func GetTask(ctx context.Context, hostIPV4addr string, taskID string) (int, redf
 }
 
 func GetTaskList(ctx context.Context, hostIPV4addr string) (int, int) {
+	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.GetTaskList(ctx)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
@@ -89,6 +91,7 @@ func GetTaskList(ctx context.Context, hostIPV4addr string) (int, int) {
 }
 
 func GetVirtualMediaConnectedStatus(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
+	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	//	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, "iDRAC.Embedded.1", "CD")
 	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, managerID, media)
@@ -100,6 +103,7 @@ func GetVirtualMediaConnectedStatus(ctx context.Context, hostIPV4addr string, ma
 }
 
 func UpdateService(ctx context.Context, hostIPV4addr string) string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	// call the UpdateService and get the HttpPushURi
 	sl, response, err := redfishApi.UpdateService(ctx)
@@ -111,6 +115,7 @@ func UpdateService(ctx context.Context, hostIPV4addr string) string {
 }
 
 func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, etag string) (string, error) {
+	logger := ctx.Value("logger").(*zap.Logger)
 	filehandle, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err)
@@ -133,6 +138,7 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 }
 
 func GetFirwareInventory(ctx context.Context, hostIPV4addr string) *redfish.Collection {
+	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
@@ -143,6 +149,7 @@ func GetFirwareInventory(ctx context.Context, hostIPV4addr string) *redfish.Coll
 }
 
 func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
 	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
@@ -162,6 +169,7 @@ func getJobID(response *_nethttp.Response) string {
 }
 
 func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI string) string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	reqBody := new(redfish.SimpleUpdateRequestBody)
@@ -176,6 +184,7 @@ func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI stri
 }
 
 func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, resetRequestBody redfish.ResetRequestBody) bool {
+	logger := ctx.Value("logger").(*zap.Logger)
 
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
@@ -191,6 +200,7 @@ func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, rese
 }
 
 func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, computerSystem redfish.ComputerSystem) bool {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -203,9 +213,9 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 }
 
 func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redfish.ComputerSystem, bool) {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
-	logger := ctx.Value("logger").(*zap.Logger)
 
 	sl, response, err := redfishApi.GetSystem(ctx, systemID)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
@@ -219,6 +229,7 @@ func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redf
 }
 
 func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID string, media string) bool {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -235,6 +246,7 @@ func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID strin
 }
 
 func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID string, mediaID string, insertMediaReqBody redfish.InsertMediaRequestBody) bool {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -250,6 +262,7 @@ func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID stri
 }
 
 func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, controllerID string) []redfish.IdRef {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -263,6 +276,7 @@ func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, contr
 }
 
 func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string, storageID string) string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
@@ -283,6 +297,7 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 }
 
 func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string, controllerID string, createVirtualDiskRequestBody redfish.CreateVirtualDiskRequestBody) string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
@@ -297,6 +312,7 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 }
 
 func ListManagers(ctx context.Context, hostIPV4addr string) []string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListManagers(ctx)
@@ -336,6 +352,7 @@ func retrieveStringsFromIdrefList(idrefs []redfish.IdRef) []string {
 }
 
 func ListSystems(ctx context.Context, hostIPV4addr string) []string {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListSystems(ctx)
@@ -357,6 +374,7 @@ func ListSystems(ctx context.Context, hostIPV4addr string) []string {
 }
 
 func GetRoot(ctx context.Context, hostIPV4addr string) *redfish.Root {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.GetRoot(ctx)
@@ -371,6 +389,7 @@ func GetRoot(ctx context.Context, hostIPV4addr string) *redfish.Root {
 }
 
 func GetSoftwareInventory(ctx context.Context, hostIPV4addr string, softwareId string) *redfish.SoftwareInventory {
+	logger := ctx.Value("logger").(*zap.Logger)
 	headerInfo := make(map[string]string)
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.GetSoftwareInventory(ctx, softwareId)
