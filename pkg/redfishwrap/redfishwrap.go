@@ -97,6 +97,9 @@ func GetVirtualMediaConnectedStatus(ctx context.Context, hostIPV4addr string, ma
 	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, managerID, media)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || sl.ConnectedVia == "NotConnected" {
+		if err != nil{
+		     logger.Error("Feiled to retreive connection status", zap.Error(err))
+	         }
 		return false
 	}
 	return true
@@ -109,6 +112,7 @@ func UpdateService(ctx context.Context, hostIPV4addr string) string {
 	sl, response, err := redfishApi.UpdateService(ctx)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("UpdateService Failed", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return ""
 	}
 	return sl.HttpPushUri
@@ -118,7 +122,8 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 	logger := ctx.Value("logger").(*zap.Logger)
 	filehandle, err := os.Open(filePath)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error("Failed to open file" , zap.String("FilePath", filePath), zap.Error(err))
+		//fmt.Println(err)
 		return "", err
 	}
 	defer filehandle.Close()
@@ -130,6 +135,7 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, &reqBody)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Download of Image Failed", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return "", err
 	}
 	location, _ := response.Location()
@@ -143,6 +149,7 @@ func GetFirwareInventory(ctx context.Context, hostIPV4addr string) *redfish.Coll
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("GetFirmware Inventory  Failed", zap.Error(err),zap.Int("HTTP Status", response.StatusCode))
 		return nil
 	}
 	return &sl
@@ -154,6 +161,7 @@ func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("GetEtagHttpUri  Failed", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return ""
 	}
 	etag := response.Header["Etag"]
@@ -178,6 +186,7 @@ func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI stri
 	sl, response, err := redfishApi.UpdateServiceSimpleUpdate(ctx, *reqBody)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("SimpleUpdateRequest  Failed", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return ""
 	}
 	return getJobID(response)
@@ -194,6 +203,7 @@ func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, rese
 	sl, response, err := redfishApi.ResetSystem(ctx, systemId, resetRequestBody)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Reset Server  Failed", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return false
 	}
 	return true
@@ -207,6 +217,7 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 	sl, response, err := redfishApi.SetSystem(ctx, systemId, computerSystem)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Set System  Failed", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return false
 	}
 	return true
@@ -221,7 +232,7 @@ func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redf
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		logger.Error("Failed to retrieve System Information", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
+		logger.Error("Failed to retrieve System Information", zap.Error(err))
 		return nil, false
 	}
 
@@ -239,6 +250,7 @@ func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID strin
 	sl, response, err := redfishApi.EjectVirtualMedia(ctx, managerID, media, body)
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Failed to Eject Virtual Media", zap.String("Media", media) ,zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return false
 	}
 
@@ -255,6 +267,7 @@ func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID stri
 
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Failed to Insert Virtual Media", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return false
 	}
 
@@ -271,6 +284,7 @@ func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, contr
 
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Failed to Retrieve Volume information", zap.String("ControllerID", controllerID),zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return nil
 	}
 	return sl.Members
@@ -284,6 +298,7 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	response, err := redfishApi.DeleteVirtualdisk(ctx, systemID, storageID)
 
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Failed to Delete Virtual Media", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return ""
 	}
 
@@ -303,6 +318,7 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.CreateVirtualDisk(ctx, systemID, controllerID, createVirtualDiskRequestBody)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Failed to Create Virtual Media", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return ""
 	}
 	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
@@ -318,7 +334,8 @@ func ListManagers(ctx context.Context, hostIPV4addr string) []string {
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListManagers(ctx)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Sprintf("%+v", err)
+		logger.Error("Failed to ListManagers", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
+		//fmt.Sprintf("%+v", err)
 		return nil
 	}
 	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
@@ -327,7 +344,7 @@ func ListManagers(ctx context.Context, hostIPV4addr string) []string {
 	idrefs := sl.Members
 
 	if idrefs == nil {
-		fmt.Sprintf("Failed to retrieve Manager ID")
+		logger.Error("Failed to retrieve Manager ID" )
 		return nil
 	}
 	return retrieveStringsFromIdrefList(idrefs)
@@ -380,7 +397,8 @@ func GetRoot(ctx context.Context, hostIPV4addr string) *redfish.Root {
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.GetRoot(ctx)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Sprintf("%+v", err)
+		logger.Error("Failed to Get Root", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
+		//fmt.Sprintf("%+v", err)
 		return nil
 	}
 	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
@@ -395,7 +413,8 @@ func GetSoftwareInventory(ctx context.Context, hostIPV4addr string, softwareId s
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.GetSoftwareInventory(ctx, softwareId)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Sprintf("%+v", err)
+		logger.Error("Failed to Get Software Inventory", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
+		//fmt.Sprintf("%+v", err)
 		return nil
 	}
 	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
