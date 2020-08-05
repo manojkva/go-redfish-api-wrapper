@@ -78,7 +78,7 @@ func GetTask(ctx context.Context, hostIPV4addr string, taskID string) (int, redf
 	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.GetTask(ctx, taskID)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	return response.StatusCode, sl
 }
 
@@ -86,7 +86,7 @@ func GetTaskList(ctx context.Context, hostIPV4addr string) (int, int) {
 	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.GetTaskList(ctx)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	return response.StatusCode, len(sl.Members)
 }
 
@@ -95,7 +95,7 @@ func GetVirtualMediaConnectedStatus(ctx context.Context, hostIPV4addr string, ma
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	//	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, "iDRAC.Embedded.1", "CD")
 	sl, response, err := redfishApi.GetManagerVirtualMedia(ctx, managerID, media)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || sl.ConnectedVia == "NotConnected" {
 		return false
 	}
@@ -107,7 +107,7 @@ func UpdateService(ctx context.Context, hostIPV4addr string) string {
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	// call the UpdateService and get the HttpPushURi
 	sl, response, err := redfishApi.UpdateService(ctx)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return ""
 	}
@@ -128,7 +128,7 @@ func HTTPUriDownload(ctx context.Context, hostIPV4addr string, filePath string, 
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
 	sl, response, err := redfishApi.FirmwareInventoryDownloadImage(ctx, &reqBody)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return "", err
 	}
@@ -141,7 +141,7 @@ func GetFirwareInventory(ctx context.Context, hostIPV4addr string) *redfish.Coll
 	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return nil
 	}
@@ -152,12 +152,12 @@ func GetETagHttpURI(ctx context.Context, hostIPV4addr string) string {
 	logger := ctx.Value("logger").(*zap.Logger)
 	redfishApi := createAPIClient(make(map[string]string), hostIPV4addr)
 	sl, response, err := redfishApi.FirmwareInventory(ctx)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return ""
 	}
 	etag := response.Header["Etag"]
-	fmt.Printf("%v", etag[0])
+	logger.Debug("Retreived Etag", zap.String("etag",fmt.Sprintf("%v", etag[0])))
 	return etag[0]
 }
 
@@ -176,7 +176,7 @@ func SimpleUpdateRequest(ctx context.Context, hostIPV4addr string, imageURI stri
 	localUriImage := imageURI
 	reqBody.ImageURI = localUriImage
 	sl, response, err := redfishApi.UpdateServiceSimpleUpdate(ctx, *reqBody)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return ""
 	}
@@ -192,7 +192,7 @@ func ResetServer(ctx context.Context, hostIPV4addr string, systemId string, rese
 	//	resetRequestBody := redfish.ResetRequestBody{ResetType: redfish.RESETTYPE_FORCE_RESTART}
 
 	sl, response, err := redfishApi.ResetSystem(ctx, systemId, resetRequestBody)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
@@ -205,7 +205,7 @@ func SetSystem(ctx context.Context, hostIPV4addr string, systemId string, comput
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 
 	sl, response, err := redfishApi.SetSystem(ctx, systemId, computerSystem)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
@@ -221,6 +221,7 @@ func GetSystem(ctx context.Context, hostIPV4addr string, systemID string) (*redf
 	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
+		logger.Error("Failed to retrieve System Information", zap.Error(err), zap.Int("HTTP Status", response.StatusCode))
 		return nil, false
 	}
 
@@ -236,7 +237,7 @@ func EjectVirtualMedia(ctx context.Context, hostIPV4addr string, managerID strin
 	body := make(map[string]interface{})
 
 	sl, response, err := redfishApi.EjectVirtualMedia(ctx, managerID, media, body)
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
@@ -252,7 +253,7 @@ func InsertVirtualMedia(ctx context.Context, hostIPV4addr string, managerID stri
 
 	sl, response, err := redfishApi.InsertVirtualMedia(ctx, managerID, mediaID, insertMediaReqBody)
 
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return false
 	}
@@ -268,7 +269,7 @@ func GetVolumes(ctx context.Context, hostIPV4addr string, systemID string, contr
 
 	sl, response, err := redfishApi.GetVolumes(ctx, systemID, controllerID)
 
-	fmt.Printf("%+v %+v %+v", prettyPrint(sl), response, err)
+	logger.Debug(fmt.Sprintf("%+v %+v %+v", prettyPrint(sl), response, err))
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return nil
 	}
@@ -286,9 +287,9 @@ func DeleteVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 		return ""
 	}
 
-	fmt.Printf("\n%v\n", response.Request)
+	logger.Debug("HTTP Request", zap.String("Request", fmt.Sprintf("\n%v\n", response.Request)))
 
-	fmt.Printf("\n%+v\n %+v\n", response, err)
+	logger.Debug("HTTP Response", zap.String("Response", fmt.Sprintf("\n%+v\n %+v\n", response, err)))
 	var jobid string = ""
 	jobid = getJobID(response)
 
@@ -304,8 +305,8 @@ func CreateVirtualDisk(ctx context.Context, hostIPV4addr string, systemID string
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
 		return ""
 	}
-	fmt.Printf("\n%v\n", response.Request)
-	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
+	logger.Debug("HTTP Response", zap.String("Response",fmt.Sprintf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)))
 	var jobid string = ""
 	jobid = getJobID(response)
 	return jobid
@@ -317,16 +318,16 @@ func ListManagers(ctx context.Context, hostIPV4addr string) []string {
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListManagers(ctx)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Printf("%+v", err)
+		fmt.Sprintf("%+v", err)
 		return nil
 	}
-	fmt.Printf("\n%v\n", response.Request)
-	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
+	logger.Debug("HTTP Response", zap.String("Response",fmt.Sprintf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)))
 
 	idrefs := sl.Members
 
 	if idrefs == nil {
-		fmt.Printf("Failed to retrieve Manager ID")
+		fmt.Sprintf("Failed to retrieve Manager ID")
 		return nil
 	}
 	return retrieveStringsFromIdrefList(idrefs)
@@ -336,7 +337,7 @@ func ListManagers(ctx context.Context, hostIPV4addr string) []string {
 func retrieveStringsFromIdrefList(idrefs []redfish.IdRef) []string {
 	idList := []string{}
 	for _, id := range idrefs {
-		fmt.Printf("Idref ID %v\n", id.OdataId)
+		fmt.Sprintf("Idref ID %v\n", id.OdataId)
 		idInfo := strings.Split(id.OdataId, "/")
 		if idInfo != nil {
 			lenOflist := len(idInfo)
@@ -357,16 +358,16 @@ func ListSystems(ctx context.Context, hostIPV4addr string) []string {
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.ListSystems(ctx)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Printf("%+v", err)
+		fmt.Sprintf("%+v", err)
 		return nil
 	}
-	fmt.Printf("\n%v\n", response.Request)
-	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
+	logger.Debug("HTTP Response", zap.String("Response",fmt.Sprintf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)))
 
 	idrefs := sl.Members
 
 	if idrefs == nil {
-		fmt.Printf("Failed to retrieve System ID")
+		fmt.Sprintf("Failed to retrieve System ID")
 		return nil
 	}
 	return retrieveStringsFromIdrefList(idrefs)
@@ -379,11 +380,11 @@ func GetRoot(ctx context.Context, hostIPV4addr string) *redfish.Root {
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.GetRoot(ctx)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Printf("%+v", err)
+		fmt.Sprintf("%+v", err)
 		return nil
 	}
-	fmt.Printf("\n%v\n", response.Request)
-	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
+	logger.Debug("HTTP Response", zap.String("Response",fmt.Sprintf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)))
 	return &sl
 
 }
@@ -394,10 +395,10 @@ func GetSoftwareInventory(ctx context.Context, hostIPV4addr string, softwareId s
 	redfishApi := createAPIClient(headerInfo, hostIPV4addr)
 	sl, response, err := redfishApi.GetSoftwareInventory(ctx, softwareId)
 	if err != nil || (checkStatusCodeforGet(response.StatusCode) != true) {
-		fmt.Printf("%+v", err)
+		fmt.Sprintf("%+v", err)
 		return nil
 	}
-	fmt.Printf("\n%v\n", response.Request)
-	fmt.Printf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)
+	logger.Debug("HTTP Request", zap.String("Request",fmt.Sprintf("\n%v\n", response.Request)))
+	logger.Debug("HTTP Response", zap.String("Response",fmt.Sprintf("\n%+v\n %+v\n %+v\n", prettyPrint(sl), response, err)))
 	return &sl
 }
