@@ -133,7 +133,7 @@ func TestEjectISO(t *testing.T) {
 func TestInsertCD(t *testing.T) {
 
 	managerID := "iDRAC.Embedded.1"
-	imageURL := "http://32.168.220.23:31180/a451dcb7-9a17-45a8-8915-f5ab0a175cf6-ubuntu.iso"
+	imageURL := "http://132.168.220.123:31180/a451dcb7-9a17-45a8-8915-f5ab0a175cf6-ubuntu.iso"
 	res := client.InsertISO(managerID, "CD", imageURL)
 	assert.Equal(t, res, true)
 }
